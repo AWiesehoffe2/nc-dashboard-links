@@ -1,0 +1,39 @@
+{
+  "name": "andrewiesehoff/dashboard_links",
+  "description": "Dashboard tile with admin-configured company links",
+  "license": "AGPL-3.0-or-later",
+  "type": "project",
+  "require": {
+    "php": "^8.2",
+    "ext-mbstring": "*"
+  },
+  "require-dev": {
+    "nextcloud/coding-standard": "^1.5",
+    "nextcloud/ocp": "dev-stable33",
+    "phpunit/phpunit": "^10.5"
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "autoload": {
+    "psr-4": {
+      "OCA\\DashboardLinks\\": "lib/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "OCA\\DashboardLinks\\Tests\\": "tests/",
+      "OCP\\": "vendor/nextcloud/ocp/OCP"
+    }
+  },
+  "scripts": {
+    "test": "phpunit -c phpunit.xml.dist",
+    "cs:check": "php-cs-fixer fix --dry-run --diff",
+    "cs:fix": "php-cs-fixer fix"
+  },
+  "config": {
+    "sort-packages": true,
+    "platform": {
+      "php": "8.2.27"
+    }
+  }
+}

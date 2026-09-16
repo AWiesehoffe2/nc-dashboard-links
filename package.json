@@ -1,0 +1,39 @@
+{
+  "name": "dashboard_links",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Dashboard tile with admin-configured company links",
+  "author": "Andrew Iesehoff",
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "build": "vite --mode production build",
+    "dev": "export NODE_ENV=development; vite --mode development build",
+    "watch": "export NODE_ENV=development; vite --mode development build --watch"
+  },
+  "dependencies": {
+    "@nextcloud/axios": "^2.5.1",
+    "@nextcloud/initial-state": "^3.0.0",
+    "@nextcloud/l10n": "^3.4.0",
+    "@nextcloud/router": "^3.1.0",
+    "@nextcloud/vue": "^9.9.0",
+    "vue": "^3.5.39"
+  },
+  "devDependencies": {
+    "@nextcloud/browserslist-config": "^3.1.2",
+    "@nextcloud/eslint-config": "^9.0.1",
+    "@nextcloud/vite-config": "^2.4.0",
+    "@vue/tsconfig": "^0.9.1",
+    "typescript": "^6.0.3",
+    "vite": "^7.3.5"
+  },
+  "browserslist": [
+    "extends @nextcloud/browserslist-config"
+  ],
+  "engines": {
+    "node": "^24.0.0",
+    "npm": "^11.3.0"
+  }
+}

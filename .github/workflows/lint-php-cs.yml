@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: 2026 Andrew Iesehoff
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Lint php-cs
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  php-cs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+          extensions: mbstring
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Check coding standard
+        run: composer cs:check

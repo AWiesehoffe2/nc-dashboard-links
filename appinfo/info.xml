@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<!--
+  SPDX-FileCopyrightText: 2026 Andrew Iesehoff
+  SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+<info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+	<id>dashboard_links</id>
+	<name>Company Links Dashboard</name>
+	<summary>Dashboard tile with admin-configured company links</summary>
+	<description>Admins maintain a catalog of company links in three lanes. Users see featured links on the Dashboard tile and the full list on an All links page. Iframe and redirect open modes share one bookmark path so a mode change does not break saved URLs.</description>
+	<version>1.0.0</version>
+	<licence>AGPL-3.0-or-later</licence>
+	<author>Andrew Iesehoff</author>
+	<namespace>DashboardLinks</namespace>
+	<category>dashboard</category>
+	<website>https://github.com/AWiesehoffe2/nc-dashboard-links</website>
+	<bugs>https://github.com/AWiesehoffe2/nc-dashboard-links/issues</bugs>
+	<dependencies>
+		<php min-version="8.2" max-version="8.5"/>
+		<nextcloud min-version="33" max-version="35"/>
+	</dependencies>
+	<repair-steps>
+		<uninstall>
+			<step>OCA\DashboardLinks\Migration\Uninstall</step>
+		</uninstall>
+	</repair-steps>
+	<settings>
+		<admin>OCA\DashboardLinks\Settings\Admin</admin>
+		<admin-section>OCA\DashboardLinks\Settings\Section</admin-section>
+	</settings>
+</info>

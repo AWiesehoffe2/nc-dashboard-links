@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2026 Andrew Iesehoff
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Lint info.xml
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  xml-linters:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install libxml and xmllint
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libxml2 libxml2-utils
+
+      - name: Download App Store info.xsd
+        run: curl -fsSL -o info.xsd https://raw.githubusercontent.com/nextcloud/appstore/master/nextcloudappstore/api/v1/release/info.xsd
+
+      - name: Validate appinfo/info.xml
+        run: xmllint --noout --schema info.xsd appinfo/info.xml

@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2026 Andrew Iesehoff
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+# Store tarball excludes. composer.lock stays in the repository and is not listed here.
+.audit/
+.github/
+tests/
+vendor/
+node_modules/
+.phpunit.cache/
+.php-cs-fixer.cache
+.phpunit.result.cache
+js/*.map
