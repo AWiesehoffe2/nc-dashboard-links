@@ -29,3 +29,9 @@ path = ["package.json", "package-lock.json", "tsconfig.json", "js/**"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 André Wiesehoff"
 SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+[[annotations]]
+path = ["l10n/**", "css/**", "Makefile", "docs/**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 André Wiesehoff"
+SPDX-License-Identifier = "AGPL-3.0-or-later"

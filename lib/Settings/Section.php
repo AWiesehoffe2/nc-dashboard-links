@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace OCA\DashboardLinks\Settings;
 
 use OCA\DashboardLinks\AppInfo\Application;
+use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCP\Settings\IIconSection;
 
@@ -18,6 +19,7 @@ final class Section implements IIconSection {
 
 	public function __construct(
 		private readonly IURLGenerator $urlGenerator,
+		private readonly IL10N $l10n,
 	) {
 	}
 
@@ -28,7 +30,7 @@ final class Section implements IIconSection {
 
 	#[\Override]
 	public function getName(): string {
-		return 'Company links';
+		return $this->l10n->t('Company links');
 	}
 
 	#[\Override]

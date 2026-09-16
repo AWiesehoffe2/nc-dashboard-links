@@ -18,9 +18,9 @@ final readonly class CompanyLink implements \JsonSerializable {
 		public LinkId $id,
 		string $title,
 		public HttpsUrl $href,
-		public Importance $importance,
 		public OpenMode $openMode,
 		public ?Icon $icon,
+		public ?CategoryId $categoryId,
 		public bool $enabled,
 	) {
 		$title = trim($title);
@@ -33,20 +33,18 @@ final readonly class CompanyLink implements \JsonSerializable {
 
 	/**
 	 * @param mixed $row untrusted wire or storage row
-	 * @param ?Importance $lane when set, importance comes from the lane
 	 */
-	public static function parse(mixed $row, ?Importance $lane = null): self {
+	public static function parse(mixed $row): self {
 		if (!is_array($row)) {
 			throw new InvalidLink('id', 'row must be an object');
 		}
-		if ($lane !== null && array_key_exists('importance', $row)) {
-			throw new InvalidLink('importance', 'importance belongs on the lane, not the row');
+		if (array_key_exists('importance', $row)) {
+			throw new InvalidLink('importance', 'importance is not used; assign a category or leave the default list');
 		}
 
 		$id = self::stringField($row, 'id');
 		$title = self::stringField($row, 'title');
 		$href = self::stringField($row, 'href');
-		$importance = $lane ?? self::importanceField($row);
 		$openMode = OpenMode::tryFrom(self::stringField($row, 'openMode'));
 		if ($openMode === null) {
 			throw new InvalidLink('openMode', 'openMode must be iframe or redirect');
@@ -60,6 +58,11 @@ final readonly class CompanyLink implements \JsonSerializable {
 			$icon = Icon::parse($row['icon']);
 		}
 
+		$categoryId = null;
+		if (array_key_exists('categoryId', $row) && $row['categoryId'] !== null) {
+			$categoryId = CategoryId::tryParse($row['categoryId']);
+		}
+
 		if (!array_key_exists('enabled', $row) || !is_bool($row['enabled'])) {
 			throw new InvalidLink('enabled', 'enabled must be a boolean');
 		}
@@ -68,15 +71,15 @@ final readonly class CompanyLink implements \JsonSerializable {
 			LinkId::parse($id),
 			$title,
 			HttpsUrl::parse($href),
-			$importance,
 			$openMode,
 			$icon,
+			$categoryId,
 			$row['enabled'],
 		);
 	}
 
 	/**
-	 * @return array{id: string, title: string, href: string, importance: string, openMode: string, icon: ?string, enabled: bool}
+	 * @return array{id: string, title: string, href: string, openMode: string, icon: ?string, categoryId: ?string, enabled: bool}
 	 */
 	#[\Override]
 	public function jsonSerialize(): array {
@@ -84,9 +87,9 @@ final readonly class CompanyLink implements \JsonSerializable {
 			'id' => (string)$this->id,
 			'title' => $this->title,
 			'href' => (string)$this->href,
-			'importance' => $this->importance->value,
 			'openMode' => $this->openMode->value,
 			'icon' => $this->icon === null ? null : (string)$this->icon,
+			'categoryId' => $this->categoryId === null ? null : (string)$this->categoryId,
 			'enabled' => $this->enabled,
 		];
 	}
@@ -100,18 +103,5 @@ final readonly class CompanyLink implements \JsonSerializable {
 		}
 
 		return $row[$field];
-	}
-
-	/**
-	 * @param array<array-key, mixed> $row
-	 */
-	private static function importanceField(array $row): Importance {
-		$raw = self::stringField($row, 'importance');
-		$importance = Importance::tryFrom($raw);
-		if ($importance === null) {
-			throw new InvalidLink('importance', 'importance must be featured, normal, or reference');
-		}
-
-		return $importance;
 	}
 }

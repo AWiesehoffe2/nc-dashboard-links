@@ -22,25 +22,13 @@ final class LinkPresenter {
 			$views[] = new LinkView(
 				(string)$link->id,
 				$link->title,
-				self::subtitle($link),
+				$link->href->host(),
 				$this->urls->openUrl($link),
 				$this->urls->iconUrl($link),
-				$this->urls->overlayIconUrl($link),
+				'',
 			);
 		}
 
 		return $views;
-	}
-
-	public static function subtitle(CompanyLink $link): string {
-		return self::importanceLabel($link->importance) . ' · ' . $link->href->host();
-	}
-
-	public static function importanceLabel(Importance $importance): string {
-		return match ($importance) {
-			Importance::Featured => 'Featured',
-			Importance::Normal => 'Company',
-			Importance::Reference => 'Reference',
-		};
 	}
 }

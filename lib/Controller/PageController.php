@@ -10,10 +10,8 @@ declare(strict_types=1);
 namespace OCA\DashboardLinks\Controller;
 
 use OCA\DashboardLinks\AppInfo\Application;
-use OCA\DashboardLinks\Links\Catalog;
 use OCA\DashboardLinks\Links\CatalogStore;
 use OCA\DashboardLinks\Links\CompanyLink;
-use OCA\DashboardLinks\Links\Importance;
 use OCA\DashboardLinks\Links\LinkId;
 use OCA\DashboardLinks\Links\LinkPresenter;
 use OCA\DashboardLinks\Links\LinkView;
@@ -26,6 +24,7 @@ use OCP\AppFramework\Http\NotFoundResponse;
 use OCP\AppFramework\Http\RedirectResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\AppFramework\Http\TemplateResponse;
+use OCP\IL10N;
 use OCP\IRequest;
 
 final class PageController extends Controller {
@@ -34,6 +33,7 @@ final class PageController extends Controller {
 		IRequest $request,
 		private readonly CatalogStore $store,
 		private readonly LinkPresenter $presenter,
+		private readonly IL10N $l10n,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -45,7 +45,12 @@ final class PageController extends Controller {
 		return new TemplateResponse(
 			Application::APP_ID,
 			'links',
-			['bands' => $this->bands($this->store->current())],
+			[
+				'pageTitle' => $this->l10n->t('Company links'),
+				'emptyTitle' => $this->l10n->t('No company links'),
+				'emptyHint' => $this->l10n->t('Ask an administrator to add company links.'),
+				'bands' => $this->bands(),
+			],
 		);
 	}
 
@@ -62,10 +67,13 @@ final class PageController extends Controller {
 			return new NotFoundResponse();
 		}
 
-		return match ($link->openMode) {
+		$response = match ($link->openMode) {
 			OpenMode::Redirect => new RedirectResponse((string)$link->href),
 			OpenMode::Iframe => $this->frame($link),
 		};
+		$response->addHeader('Referrer-Policy', 'no-referrer');
+
+		return $response;
 	}
 
 	private function frame(CompanyLink $link): TemplateResponse {
@@ -83,15 +91,15 @@ final class PageController extends Controller {
 	/**
 	 * @return list<array{label: string, links: list<array{title: string, url: string, iconUrl: string, subtitle: string}>}>
 	 */
-	private function bands(Catalog $catalog): array {
+	private function bands(): array {
 		$bands = [];
-		foreach (Importance::cases() as $importance) {
-			$views = $this->presenter->views($catalog->band($importance)->visible());
+		foreach ($this->store->current()->sections($this->l10n->t('Uncategorized')) as $section) {
+			$views = $this->presenter->views($section['links']);
 			if ($views === []) {
 				continue;
 			}
 			$bands[] = [
-				'label' => LinkPresenter::importanceLabel($importance),
+				'label' => $section['label'],
 				'links' => array_map(
 					static fn (LinkView $view): array => [
 						'title' => $view->title,

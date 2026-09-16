@@ -18,6 +18,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http\Attribute\PasswordConfirmationRequired;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\Http\EmptyContentSecurityPolicy;
 use OCP\AppFramework\Http\FileDisplayResponse;
@@ -37,6 +38,7 @@ final class IconController extends Controller {
 	}
 
 	#[FrontpageRoute(verb: 'POST', url: '/icons')]
+	#[PasswordConfirmationRequired]
 	public function upload(): DataResponse {
 		try {
 			$icon = $this->icons->store($this->uploadedBytes());
@@ -58,6 +60,9 @@ final class IconController extends Controller {
 	public function show(string $file): Response {
 		try {
 			$icon = Icon::parse($file);
+			if ($icon->isCore()) {
+				return new NotFoundResponse();
+			}
 			$stored = $this->icons->open($icon);
 		} catch (InvalidLink|NotFoundException) {
 			return new NotFoundResponse();
@@ -81,11 +86,19 @@ final class IconController extends Controller {
 		if (!is_array($uploaded) || !isset($uploaded['tmp_name']) || !is_string($uploaded['tmp_name'])) {
 			throw new InvalidLink('icon', 'icon upload is missing');
 		}
+		$tmpName = $uploaded['tmp_name'];
+		if (!is_uploaded_file($tmpName)) {
+			throw new InvalidLink('icon', 'icon upload is missing');
+		}
 		$error = $uploaded['error'] ?? \UPLOAD_ERR_OK;
 		if ($error !== \UPLOAD_ERR_OK) {
 			throw new InvalidLink('icon', 'icon upload failed');
 		}
-		$bytes = file_get_contents($uploaded['tmp_name']);
+		$size = filesize($tmpName);
+		if ($size === false || $size > Icons::MAX_BYTES) {
+			throw new InvalidLink('icon', 'icon must be at most 262144 bytes');
+		}
+		$bytes = file_get_contents($tmpName);
 		if ($bytes === false) {
 			throw new InvalidLink('icon', 'icon upload is unreadable');
 		}

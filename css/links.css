@@ -1,0 +1,76 @@
+/**
+ * SPDX-FileCopyrightText: 2026 André Wiesehoff
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+#dashboard-links-all {
+	max-width: 45rem;
+	margin-inline: auto;
+}
+
+#dashboard-links-all > h2 {
+	margin-block: 0 calc(var(--default-grid-baseline, 4px) * 4);
+}
+
+.dashboard-links-band {
+	margin-block-end: calc(var(--default-grid-baseline, 4px) * 6);
+}
+
+.dashboard-links-band > h3 {
+	margin: 0 0 calc(var(--default-grid-baseline, 4px) * 2);
+	font-size: var(--default-font-size, 15px);
+	color: var(--color-text-maxcontrast);
+}
+
+.dashboard-links-band > h3:empty {
+	display: none;
+}
+
+.dashboard-links-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-large, 8px);
+	overflow: hidden;
+}
+
+.dashboard-links-item + .dashboard-links-item {
+	border-block-start: 1px solid var(--color-border);
+}
+
+.dashboard-links-item a {
+	display: flex;
+	align-items: center;
+	gap: calc(var(--default-grid-baseline, 4px) * 3);
+	padding: calc(var(--default-grid-baseline, 4px) * 3);
+	color: var(--color-main-text);
+	text-decoration: none;
+}
+
+.dashboard-links-item a:hover,
+.dashboard-links-item a:focus-visible {
+	background-color: var(--color-background-hover);
+}
+
+.dashboard-links-item img {
+	width: 32px;
+	height: 32px;
+	object-fit: contain;
+	flex-shrink: 0;
+}
+
+.dashboard-links-item-text {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.dashboard-links-item-title {
+	font-weight: 600;
+}
+
+.dashboard-links-item-subtitle {
+	color: var(--color-text-maxcontrast);
+}

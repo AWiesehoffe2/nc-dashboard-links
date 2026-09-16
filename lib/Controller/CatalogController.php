@@ -15,6 +15,7 @@ use OCA\DashboardLinks\Links\InvalidCatalog;
 use OCA\DashboardLinks\Links\StaleCatalog;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
+use OCP\AppFramework\Http\Attribute\PasswordConfirmationRequired;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\OCSController;
 use OCP\IRequest;
@@ -34,18 +35,17 @@ final class CatalogController extends OCSController {
 	}
 
 	/**
-	 * @param list<array<string, mixed>> $featured
-	 * @param list<array<string, mixed>> $normal
-	 * @param list<array<string, mixed>> $reference
+	 * @param list<array<string, mixed>> $categories
+	 * @param list<array<string, mixed>> $links
 	 */
 	#[ApiRoute(verb: 'PUT', url: '/api/v1/catalog')]
-	public function replace(string $revision, array $featured = [], array $normal = [], array $reference = []): DataResponse {
+	#[PasswordConfirmationRequired]
+	public function replace(string $revision, array $categories = [], array $links = []): DataResponse {
 		try {
 			$saved = $this->store->replace(
 				Catalog::parse([
-					'featured' => $featured,
-					'normal' => $normal,
-					'reference' => $reference,
+					'categories' => $categories,
+					'links' => $links,
 				]),
 				$revision,
 			);

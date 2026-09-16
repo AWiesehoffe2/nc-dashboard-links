@@ -32,12 +32,13 @@ final class LinksWidgetTest extends TestCase {
 	protected function setUp(): void {
 		$this->store = new CatalogStore(new InMemoryAppConfig());
 		$urls = new LinkUrls(new FakeUrlGenerator());
+		$l10n = new IdentityL10N();
 		$groups = $this->createStub(IGroupManager::class);
 		$groups->method('isAdmin')->willReturnCallback(
 			static fn (string $userId): bool => $userId === 'admin',
 		);
 		$this->widget = new LinksWidget(
-			new IdentityL10N(),
+			$l10n,
 			$groups,
 			$this->store,
 			new LinkPresenter($urls),
@@ -45,7 +46,7 @@ final class LinksWidgetTest extends TestCase {
 		);
 	}
 
-	public function testGetItemsV2ReturnsSevenTitlesFeaturedFirst(): void {
+	public function testGetItemsV2ReturnsSevenTitlesInListOrder(): void {
 		$this->replaceEightVisible();
 
 		$items = $this->widget->getItemsV2('alice', null, 7)->getItems();
@@ -55,7 +56,9 @@ final class LinksWidgetTest extends TestCase {
 			['Intranet', 'Wiki', 'Docs', 'Chat', 'HR', 'Handbook', 'Legal'],
 			array_map(static fn ($item): string => $item->getTitle(), $items),
 		);
-		self::assertSame('Intranet', $items[0]->getTitle());
+		self::assertSame('intranet.example.com', $items[0]->getSubtitle());
+		self::assertSame('', $items[0]->getOverlayIconUrl());
+		self::assertStringNotContainsString('Company', $items[0]->getSubtitle());
 	}
 
 	public function testGetWidgetButtonsNonAdminWithEightVisibleIsMore(): void {
@@ -90,32 +93,32 @@ final class LinksWidgetTest extends TestCase {
 
 	private function replaceEightVisible(): void {
 		$catalog = Catalog::parse([
-			'featured' => [$this->laneRow(self::INTRANET_ID, 'Intranet', 'https://intranet.example.com/')],
-			'normal' => [
-				$this->laneRow(self::WIKI_ID, 'Wiki', 'https://wiki.example.com/'),
-				$this->laneRow('11111111-1111-4111-8111-111111111111', 'Docs', 'https://docs.example.com/'),
-				$this->laneRow('22222222-2222-4222-8222-222222222222', 'Chat', 'https://chat.example.com/'),
-				$this->laneRow('33333333-3333-4333-8333-333333333333', 'HR', 'https://hr.example.com/'),
-			],
-			'reference' => [
-				$this->laneRow(self::HANDBOOK_ID, 'Handbook', 'https://handbook.example.com/'),
-				$this->laneRow('44444444-4444-4444-8444-444444444444', 'Legal', 'https://legal.example.com/'),
-				$this->laneRow('55555555-5555-4555-8555-555555555555', 'Status', 'https://status.example.com/'),
+			'categories' => [],
+			'links' => [
+				$this->row(self::INTRANET_ID, 'Intranet', 'https://intranet.example.com/'),
+				$this->row(self::WIKI_ID, 'Wiki', 'https://wiki.example.com/'),
+				$this->row('11111111-1111-4111-8111-111111111111', 'Docs', 'https://docs.example.com/'),
+				$this->row('22222222-2222-4222-8222-222222222222', 'Chat', 'https://chat.example.com/'),
+				$this->row('33333333-3333-4333-8333-333333333333', 'HR', 'https://hr.example.com/'),
+				$this->row(self::HANDBOOK_ID, 'Handbook', 'https://handbook.example.com/'),
+				$this->row('44444444-4444-4444-8444-444444444444', 'Legal', 'https://legal.example.com/'),
+				$this->row('55555555-5555-4555-8555-555555555555', 'Status', 'https://status.example.com/'),
 			],
 		]);
 		$this->store->replace($catalog, $this->store->current()->revision());
 	}
 
 	/**
-	 * @return array{id: string, title: string, href: string, openMode: string, icon: null, enabled: bool}
+	 * @return array{id: string, title: string, href: string, openMode: string, icon: null, categoryId: null, enabled: bool}
 	 */
-	private function laneRow(string $id, string $title, string $href): array {
+	private function row(string $id, string $title, string $href): array {
 		return [
 			'id' => $id,
 			'title' => $title,
 			'href' => $href,
 			'openMode' => $title === 'Intranet' ? 'iframe' : 'redirect',
 			'icon' => null,
+			'categoryId' => null,
 			'enabled' => true,
 		];
 	}

@@ -6,15 +6,27 @@
 <info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
 	<id>dashboard_links</id>
 	<name>Company Links Dashboard</name>
+	<name lang="de">Firmenlinks</name>
 	<summary>Dashboard tile with admin-configured company links</summary>
-	<description>Admins maintain a catalog of company links in three lanes. Users see featured links on the Dashboard tile and the full list on an All links page. Iframe and redirect open modes share one bookmark path so a mode change does not break saved URLs. This repository is a public reference: the app was designed and implemented entirely with AI.</description>
+	<summary lang="de">Dashboard-Kachel mit vom Admin gepflegten Firmenlinks</summary>
+	<description><![CDATA[Admins maintain a catalog of company links in one list, with optional custom categories. Users see those links on the Dashboard tile and the full list on an All links page. Iframe and redirect open modes share one bookmark path so a mode change does not break saved URLs.
+
+**Privacy.** This app does not store user accounts and does not send data to the author. Opening a link (iframe or redirect) sends the user's browser to the administrator-chosen https address. That site can see the user's IP address, browser details, and often the Nextcloud address as referrer. Administrators must list those destinations in the instance privacy notice. Uninstall deletes the catalog and uploaded icons.
+
+This repository is a public reference: the app was designed and implemented entirely with AI.]]></description>
+	<description lang="de"><![CDATA[Admins pflegen einen Katalog von Firmenlinks in einer Liste, optional mit eigenen Kategorien. Nutzer sehen diese Links auf der Dashboard-Kachel und die volle Liste unter Alle Links. iframe und Weiterleitung teilen sich einen Lesezeichen-Pfad.
+
+**Datenschutz.** Diese App speichert keine Benutzerkonten und sendet keine Daten an den Autor. Ein Klick (iframe oder Weiterleitung) schickt den Browser des Nutzers an die vom Admin gewählte https-Adresse. Diese Seite kann die IP-Adresse, Browserdaten und oft die Nextcloud-Adresse als Referrer sehen. Admins müssen diese Ziele in der Datenschutzerklärung der Instanz nennen. Deinstallation löscht Katalog und hochgeladene Icons.
+
+Dieses Repository ist eine öffentliche Referenz: die App wurde vollständig mit KI umgesetzt.]]></description>
 	<version>1.0.0</version>
 	<licence>AGPL-3.0-or-later</licence>
-	<author>André Wiesehoff</author>
+	<author homepage="https://github.com/AWiesehoffe2">André Wiesehoff</author>
 	<namespace>DashboardLinks</namespace>
 	<category>dashboard</category>
 	<website>https://github.com/AWiesehoffe2/nc-dashboard-links</website>
 	<bugs>https://github.com/AWiesehoffe2/nc-dashboard-links/issues</bugs>
+	<repository type="git">https://github.com/AWiesehoffe2/nc-dashboard-links.git</repository>
 	<dependencies>
 		<php min-version="8.2" max-version="8.5"/>
 		<nextcloud min-version="33" max-version="35"/>

@@ -6,7 +6,13 @@
 <template>
 	<NcSettingsSection
 		:name="t('dashboard_links', 'Company links')"
-		:description="t('dashboard_links', 'Featured, Company, and Reference share one catalog. Save writes all three lanes. The Dashboard tile reads that same catalog.')">
+		:description="t('dashboard_links', 'Links stay in one list. Add a category only when you want a named group.')">
+		<NcNoteCard type="info">
+			{{ t('dashboard_links', 'Opening a link sends the user\'s browser to that address. The destination can see the IP address, browser details, and often the Nextcloud address as referrer. List those destinations in your instance privacy notice.') }}
+		</NcNoteCard>
+		<NcNoteCard v-if="savedNotice" type="success">
+			{{ savedNotice }}
+		</NcNoteCard>
 		<NcNoteCard v-if="staleNotice" type="warning">
 			{{ t('dashboard_links', 'The catalog was changed. The editor now shows the saved catalog.') }}
 		</NcNoteCard>
@@ -33,21 +39,43 @@
 			</NcButton>
 		</div>
 
-		<section v-for="lane in lanes" :key="lane" class="dashboard-links-lane">
-			<h3>{{ laneLabel(lane) }}</h3>
+		<section class="dashboard-links-lane">
+			<h3>{{ t('dashboard_links', 'Categories') }}</h3>
+			<p class="dashboard-links-hint">
+				{{ t('dashboard_links', 'Links without a category stay in the default list.') }}
+			</p>
 			<ul class="dashboard-links-list">
-				<li v-for="(row, index) in catalog[lane]" :key="row.id" class="dashboard-links-row">
+				<li v-for="(category, categoryIndex) in catalog.categories" :key="category.id" class="dashboard-links-row">
+					<NcTextField
+						class="dashboard-links-title"
+						:label="t('dashboard_links', 'Category')"
+						:modelValue="category.title"
+						@update:modelValue="setCategoryTitle(category, $event)" />
+					<NcButton variant="tertiary" @click="removeCategory(categoryIndex)">
+						{{ t('dashboard_links', 'Remove') }}
+					</NcButton>
+				</li>
+			</ul>
+			<NcButton @click="addCategory">
+				{{ t('dashboard_links', 'Add category') }}
+			</NcButton>
+		</section>
+
+		<section class="dashboard-links-lane">
+			<h3>{{ t('dashboard_links', 'Links') }}</h3>
+			<ul class="dashboard-links-list">
+				<li v-for="(row, index) in catalog.links" :key="row.id" class="dashboard-links-row">
 					<NcTextField
 						class="dashboard-links-title"
 						:label="t('dashboard_links', 'Title')"
 						:modelValue="row.title"
-						@update:modelValue="row.title = $event" />
+						@update:modelValue="setRowTitle(row, $event)" />
 					<NcTextField
 						class="dashboard-links-href"
 						:label="t('dashboard_links', 'URL')"
 						:modelValue="row.href"
 						placeholder="https://"
-						@update:modelValue="row.href = $event" />
+						@update:modelValue="setRowHref(row, $event)" />
 					<fieldset class="dashboard-links-mode">
 						<legend>{{ t('dashboard_links', 'Open mode') }}</legend>
 						<NcCheckboxRadioSwitch
@@ -68,13 +96,28 @@
 						</NcCheckboxRadioSwitch>
 					</fieldset>
 					<div class="dashboard-links-icon">
+						<p class="dashboard-links-hint">
+							{{ t('dashboard_links', 'Choose a Nextcloud icon or upload one.') }}
+						</p>
+						<div class="dashboard-links-icon-choices" role="group" :aria-label="t('dashboard_links', 'Nextcloud icon')">
+							<button
+								v-for="choice in coreIcons"
+								:key="choice.id"
+								class="dashboard-links-icon-choice"
+								type="button"
+								:aria-pressed="row.icon === choice.id"
+								:aria-label="choice.label"
+								@click="toggleCoreIcon(row, choice.id)">
+								<img :src="choice.url" alt="">
+							</button>
+						</div>
 						<img
 							v-if="previewUrl(row.icon)"
 							class="dashboard-links-icon-preview"
-							:src="previewUrl(row.icon)"
+							:src="previewUrl(row.icon) ?? ''"
 							alt="">
-						<NcButton @click="pickIcon(lane, index)">
-							{{ row.icon ? t('dashboard_links', 'Replace icon') : t('dashboard_links', 'Upload icon') }}
+						<NcButton @click="pickIcon(index)">
+							{{ row.icon && !isCoreIcon(row.icon) ? t('dashboard_links', 'Replace icon') : t('dashboard_links', 'Upload icon') }}
 						</NcButton>
 						<NcButton v-if="row.icon" variant="tertiary" @click="row.icon = null">
 							{{ t('dashboard_links', 'Remove icon') }}
@@ -87,32 +130,33 @@
 						{{ t('dashboard_links', 'Enabled') }}
 					</NcCheckboxRadioSwitch>
 					<NcSelect
+						v-if="catalog.categories.length > 0"
 						class="dashboard-links-lane-select"
-						:inputLabel="t('dashboard_links', 'Lane')"
-						:modelValue="laneOption(lane)"
-						:options="laneOptions"
+						:inputLabel="t('dashboard_links', 'Category')"
+						:modelValue="categoryOption(row.categoryId)"
+						:options="categoryOptions"
 						:clearable="false"
-						@update:modelValue="onLaneSelect(lane, index, $event)" />
+						@update:modelValue="onCategorySelect(row, $event)" />
 					<div class="dashboard-links-row-actions">
 						<NcButton
 							variant="tertiary"
 							:disabled="index === 0"
-							@click="moveWithinLane(lane, index, -1)">
+							@click="moveRow(index, -1)">
 							{{ t('dashboard_links', 'Move up') }}
 						</NcButton>
 						<NcButton
 							variant="tertiary"
-							:disabled="index === catalog[lane].length - 1"
-							@click="moveWithinLane(lane, index, 1)">
+							:disabled="index === catalog.links.length - 1"
+							@click="moveRow(index, 1)">
 							{{ t('dashboard_links', 'Move down') }}
 						</NcButton>
-						<NcButton variant="tertiary" @click="removeRow(lane, index)">
+						<NcButton variant="tertiary" @click="removeRow(index)">
 							{{ t('dashboard_links', 'Remove') }}
 						</NcButton>
 					</div>
 				</li>
 			</ul>
-			<NcButton @click="addRow(lane)">
+			<NcButton @click="addRow">
 				{{ t('dashboard_links', 'Add link') }}
 			</NcButton>
 		</section>
@@ -133,64 +177,52 @@
 </template>
 
 <script setup lang="ts">
-import type { CatalogEnvelope, FieldError, LaneKey, OpenMode, Row } from './types.ts'
+import type { CatalogEnvelope, Category, CoreIconChoice, FieldError, OpenMode, Row } from './types.ts'
 
 import axios from '@nextcloud/axios'
 import { loadState } from '@nextcloud/initial-state'
 import { t } from '@nextcloud/l10n'
+import { confirmPassword } from '@nextcloud/password-confirmation'
 import { generateOcsUrl, generateUrl } from '@nextcloud/router'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcSettingsSection from '@nextcloud/vue/components/NcSettingsSection'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { LANES } from './types.ts'
+
+import '@nextcloud/password-confirmation/style.css'
 
 interface SelectOption {
 	id: string
 	label: string
 }
 
-const lanes = LANES
+const DEFAULT_CATEGORY_ID = ''
+
 const catalog = ref(cloneEnvelope(loadState<CatalogEnvelope>('dashboard_links', 'catalog')))
 const externalSitesAvailable = loadState<boolean>('dashboard_links', 'externalSitesAvailable', false)
+const coreIcons = loadState<CoreIconChoice[]>('dashboard_links', 'coreIcons', [])
 const fieldErrors = ref<FieldError[]>([])
 const notices = ref<string[]>([])
 const saveError = ref<string | null>(null)
+const savedNotice = ref<string | null>(null)
 const iconError = ref<string | null>(null)
 const staleNotice = ref(false)
 const saving = ref(false)
 const importing = ref(false)
-const iconUrls = ref<Record<string, string>>({})
+const iconUrls = ref<Record<string, string>>(coreIconUrls(coreIcons))
 const fileInput = ref<HTMLInputElement | null>(null)
-const pendingIcon = ref<{ lane: LaneKey, index: number } | null>(null)
+const pendingIconIndex = ref<number | null>(null)
 
-const laneOptions: SelectOption[] = LANES.map((lane) => ({
-	id: lane,
-	label: laneLabel(lane),
-}))
-
-/**
- * Human-readable lane name.
- *
- * @param lane Lane wire key
- */
-function laneLabel(lane: LaneKey): string {
-	switch (lane) {
-		case 'featured':
-			return t('dashboard_links', 'Featured')
-		case 'normal':
-			return t('dashboard_links', 'Company')
-		case 'reference':
-			return t('dashboard_links', 'Reference')
-		default: {
-			const _exhaustive: never = lane
-			return _exhaustive
-		}
-	}
-}
+const categoryOptions = computed<SelectOption[]>(() => [
+	{ id: DEFAULT_CATEGORY_ID, label: t('dashboard_links', 'Default') },
+	...catalog.value.categories.map((category) => ({
+		id: category.id,
+		label: category.title === '' ? t('dashboard_links', 'Untitled') : category.title,
+	})),
+])
 
 /**
  * Human-readable open mode.
@@ -211,18 +243,6 @@ function openModeLabel(mode: OpenMode): string {
 }
 
 /**
- * Select option for the row's current lane.
- *
- * @param lane Current lane
- */
-function laneOption(lane: LaneKey): SelectOption {
-	return {
-		id: lane,
-		label: laneLabel(lane),
-	}
-}
-
-/**
  * Restrict a value to iframe or redirect.
  *
  * @param value Untrusted open mode
@@ -239,22 +259,6 @@ function parseOpenMode(value: unknown): OpenMode {
 }
 
 /**
- * Restrict a value to a lane key.
- *
- * @param value Untrusted lane
- */
-function parseLaneKey(value: string): LaneKey | null {
-	switch (value) {
-		case 'featured':
-		case 'normal':
-		case 'reference':
-			return value
-		default:
-			return null
-	}
-}
-
-/**
  * Assign an exhaustive open mode.
  *
  * @param row Editor row
@@ -262,6 +266,45 @@ function parseLaneKey(value: string): LaneKey | null {
  */
 function setOpenMode(row: Row, value: unknown): void {
 	row.openMode = parseOpenMode(value)
+}
+
+/**
+ * @param category Editor category
+ * @param value Field value
+ */
+function setCategoryTitle(category: Category, value: string | number): void {
+	category.title = String(value)
+}
+
+/**
+ * @param row Editor row
+ * @param value Field value
+ */
+function setRowTitle(row: Row, value: string | number): void {
+	row.title = String(value)
+}
+
+/**
+ * @param row Editor row
+ * @param value Field value
+ */
+function setRowHref(row: Row, value: string | number): void {
+	row.href = String(value)
+}
+
+/**
+ * Map stored core icon ids to their Nextcloud URLs.
+ *
+ * @param choices Initial-state core icons
+ */
+function coreIconUrls(choices: CoreIconChoice[]): Record<string, string> {
+	const urls: Record<string, string> = {}
+	for (const choice of choices) {
+		if (choice.id !== '' && choice.url !== '') {
+			urls[choice.id] = choice.url
+		}
+	}
+	return urls
 }
 
 /**
@@ -274,12 +317,25 @@ function mintRow(): Row {
 		href: '',
 		openMode: 'iframe',
 		icon: null,
+		categoryId: null,
 		enabled: true,
 	}
 }
 
 /**
- * Copy a row without an importance key.
+ * Copy a category row.
+ *
+ * @param row Source category
+ */
+function cloneCategory(row: Partial<Category>): Category {
+	return {
+		id: typeof row.id === 'string' ? row.id : crypto.randomUUID().toLowerCase(),
+		title: typeof row.title === 'string' ? row.title : '',
+	}
+}
+
+/**
+ * Copy a link row. Missing categoryId stays in the default list.
  *
  * @param row Source row
  */
@@ -290,26 +346,26 @@ function cloneRow(row: Partial<Row>): Row {
 		href: typeof row.href === 'string' ? row.href : '',
 		openMode: parseOpenMode(row.openMode),
 		icon: typeof row.icon === 'string' && row.icon !== '' ? row.icon : null,
+		categoryId: typeof row.categoryId === 'string' && row.categoryId !== '' ? row.categoryId : null,
 		enabled: row.enabled === true,
 	}
 }
 
 /**
- * Copy the three-lane envelope. Importance stays on the lane.
+ * Copy the catalog envelope.
  *
  * @param raw Catalog from PHP or OCS
  */
 function cloneEnvelope(raw: CatalogEnvelope): CatalogEnvelope {
 	return {
 		revision: typeof raw.revision === 'string' ? raw.revision : '',
-		featured: Array.isArray(raw.featured) ? raw.featured.map(cloneRow) : [],
-		normal: Array.isArray(raw.normal) ? raw.normal.map(cloneRow) : [],
-		reference: Array.isArray(raw.reference) ? raw.reference.map(cloneRow) : [],
+		categories: Array.isArray(raw.categories) ? raw.categories.map(cloneCategory) : [],
+		links: Array.isArray(raw.links) ? raw.links.map(cloneRow) : [],
 	}
 }
 
 /**
- * PUT body: lanes plus revision, no row-level importance.
+ * PUT body for one link.
  *
  * @param row Editor row
  */
@@ -320,6 +376,7 @@ function wireRow(row: Row): Row {
 		href: row.href,
 		openMode: row.openMode,
 		icon: row.icon,
+		categoryId: row.categoryId,
 		enabled: row.enabled,
 	}
 }
@@ -332,81 +389,95 @@ function wireRow(row: Row): Row {
 function wireEnvelope(envelope: CatalogEnvelope): CatalogEnvelope {
 	return {
 		revision: envelope.revision,
-		featured: envelope.featured.map(wireRow),
-		normal: envelope.normal.map(wireRow),
-		reference: envelope.reference.map(wireRow),
+		categories: envelope.categories.map((category) => ({
+			id: category.id,
+			title: category.title,
+		})),
+		links: envelope.links.map(wireRow),
 	}
 }
 
 /**
- * @param lane Lane to append
+ * Append an empty link to the default list.
  */
-function addRow(lane: LaneKey): void {
-	catalog.value[lane].push(mintRow())
+function addRow(): void {
+	catalog.value.links.push(mintRow())
 }
 
 /**
- * @param lane Lane containing the row
  * @param index Row index
  */
-function removeRow(lane: LaneKey, index: number): void {
-	catalog.value[lane].splice(index, 1)
+function removeRow(index: number): void {
+	catalog.value.links.splice(index, 1)
 }
 
 /**
- * @param lane Lane containing the row
  * @param index Row index
  * @param direction -1 up, 1 down
  */
-function moveWithinLane(lane: LaneKey, index: number, direction: -1 | 1): void {
+function moveRow(index: number, direction: -1 | 1): void {
 	const next = index + direction
-	const rows = catalog.value[lane]
+	const rows = catalog.value.links
 	if (next < 0 || next >= rows.length) {
 		return
 	}
 	const copy = [...rows]
 	const [row] = copy.splice(index, 1)
 	copy.splice(next, 0, row)
-	catalog.value[lane] = copy
+	catalog.value.links = copy
 }
 
 /**
- * @param from Current lane
- * @param index Row index
- * @param to Destination lane
+ * Append a named category. Links stay in the default list until assigned.
  */
-function moveToLane(from: LaneKey, index: number, to: LaneKey): void {
-	if (from === to) {
-		return
-	}
-	const [row] = catalog.value[from].splice(index, 1)
-	if (row === undefined) {
-		return
-	}
-	catalog.value[to].push(row)
+function addCategory(): void {
+	catalog.value.categories.push({
+		id: crypto.randomUUID().toLowerCase(),
+		title: t('dashboard_links', 'New category'),
+	})
 }
 
 /**
- * @param from Current lane
- * @param index Row index
+ * Drop a category and return its links to the default list.
+ *
+ * @param index Category index
+ */
+function removeCategory(index: number): void {
+	const [removed] = catalog.value.categories.splice(index, 1)
+	if (removed === undefined) {
+		return
+	}
+	for (const row of catalog.value.links) {
+		if (row.categoryId === removed.id) {
+			row.categoryId = null
+		}
+	}
+}
+
+/**
+ * Select option for the row's category, or Default.
+ *
+ * @param categoryId Assigned category or null
+ */
+function categoryOption(categoryId: string | null): SelectOption {
+	const id = categoryId ?? DEFAULT_CATEGORY_ID
+	return categoryOptions.value.find((option) => option.id === id)
+		?? { id: DEFAULT_CATEGORY_ID, label: t('dashboard_links', 'Default') }
+}
+
+/**
+ * @param row Editor row
  * @param selected NcSelect value
  */
-function onLaneSelect(from: LaneKey, index: number, selected: unknown): void {
-	const id = selectedLaneId(selected)
-	if (id === null) {
-		return
-	}
-	const to = parseLaneKey(id)
-	if (to === null) {
-		return
-	}
-	moveToLane(from, index, to)
+function onCategorySelect(row: Row, selected: unknown): void {
+	const id = selectedOptionId(selected)
+	row.categoryId = id === null || id === DEFAULT_CATEGORY_ID ? null : id
 }
 
 /**
  * @param value NcSelect model
  */
-function selectedLaneId(value: unknown): string | null {
+function selectedOptionId(value: unknown): string | null {
 	if (typeof value === 'string') {
 		return value
 	}
@@ -417,21 +488,40 @@ function selectedLaneId(value: unknown): string | null {
 }
 
 /**
- * @param icon Stored file name
+ * @param icon Stored file name or core: id
+ */
+function isCoreIcon(icon: string | null): boolean {
+	return icon !== null && icon.startsWith('core:')
+}
+
+/**
+ * Toggle a Nextcloud icon on the row.
+ *
+ * @param row Editor row
+ * @param iconId core: allowlisted id
+ */
+function toggleCoreIcon(row: Row, iconId: string): void {
+	row.icon = row.icon === iconId ? null : iconId
+}
+
+/**
+ * @param icon Stored file name or core: id
  */
 function previewUrl(icon: string | null): string | null {
 	if (icon === null || icon === '') {
 		return null
 	}
+	if (isCoreIcon(icon)) {
+		return iconUrls.value[icon] ?? null
+	}
 	return iconUrls.value[icon] ?? generateUrl('/apps/dashboard_links/icons/{file}', { file: icon })
 }
 
 /**
- * @param lane Lane containing the row
  * @param index Row index
  */
-function pickIcon(lane: LaneKey, index: number): void {
-	pendingIcon.value = { lane, index }
+function pickIcon(index: number): void {
+	pendingIconIndex.value = index
 	fileInput.value?.click()
 }
 
@@ -443,10 +533,16 @@ function pickIcon(lane: LaneKey, index: number): void {
 async function onIconPicked(event: Event): Promise<void> {
 	const input = event.target as HTMLInputElement
 	const file = input.files?.[0]
-	const target = pendingIcon.value
+	const index = pendingIconIndex.value
 	input.value = ''
-	pendingIcon.value = null
-	if (file === undefined || target === null) {
+	pendingIconIndex.value = null
+	if (file === undefined || index === null) {
+		return
+	}
+
+	try {
+		await confirmPassword()
+	} catch {
 		return
 	}
 
@@ -459,7 +555,7 @@ async function onIconPicked(event: Event): Promise<void> {
 			iconError.value = t('dashboard_links', 'The icon could not be uploaded.')
 			return
 		}
-		const row = catalog.value[target.lane][target.index]
+		const row = catalog.value.links[index]
 		if (row === undefined) {
 			return
 		}
@@ -478,12 +574,19 @@ async function onIconPicked(event: Event): Promise<void> {
 }
 
 /**
- * PUT the whole envelope. Never send importance on rows.
+ * PUT the whole envelope.
  */
 async function save(): Promise<void> {
+	try {
+		await confirmPassword()
+	} catch {
+		return
+	}
+
 	saving.value = true
 	fieldErrors.value = []
 	saveError.value = null
+	savedNotice.value = null
 	staleNotice.value = false
 	try {
 		const { data } = await axios.put(
@@ -494,6 +597,7 @@ async function save(): Promise<void> {
 		if (saved !== null) {
 			catalog.value = saved
 		}
+		savedNotice.value = t('dashboard_links', 'The catalog was saved.')
 	} catch (error: unknown) {
 		const status = axiosStatus(error)
 		const body = axiosBody(error)
@@ -528,12 +632,10 @@ async function importExternalSites(): Promise<void> {
 		const { data } = await axios.get(generateOcsUrl('/apps/external/api/v1/sites'))
 		const sites = sitesFromExternalPayload(readOcsData(data))
 		const existing = new Set<string>()
-		for (const lane of LANES) {
-			for (const row of catalog.value[lane]) {
-				const normalized = normalizeHttps(row.href)
-				if (normalized !== null) {
-					existing.add(normalized)
-				}
+		for (const row of catalog.value.links) {
+			const normalized = normalizeHttps(row.href)
+			if (normalized !== null) {
+				existing.add(normalized)
 			}
 		}
 
@@ -553,12 +655,13 @@ async function importExternalSites(): Promise<void> {
 				continue
 			}
 			existing.add(normalized)
-			catalog.value.normal.push({
+			catalog.value.links.push({
 				id: crypto.randomUUID().toLowerCase(),
 				title,
 				href,
 				openMode: site.redirect === true || site.redirect === 1 ? 'redirect' : 'iframe',
 				icon: null,
+				categoryId: null,
 				enabled: true,
 			})
 			imported += 1
@@ -571,7 +674,7 @@ async function importExternalSites(): Promise<void> {
 			notices.value.push(t('dashboard_links', 'Skipped {count} External sites already in the catalog.', { count: skippedDup }))
 		}
 		if (imported > 0) {
-			notices.value.push(t('dashboard_links', 'Added {count} External sites to Company. Save to store them.', { count: imported }))
+			notices.value.push(t('dashboard_links', 'Added {count} External sites. Save to store them.', { count: imported }))
 		} else if (skippedScheme === 0 && skippedDup === 0) {
 			notices.value.push(t('dashboard_links', 'No External sites to import.'))
 		}
@@ -654,9 +757,8 @@ function asEnvelope(payload: unknown): CatalogEnvelope | null {
 	}
 	return cloneEnvelope({
 		revision: candidate.revision,
-		featured: Array.isArray(candidate.featured) ? candidate.featured : [],
-		normal: Array.isArray(candidate.normal) ? candidate.normal : [],
-		reference: Array.isArray(candidate.reference) ? candidate.reference : [],
+		categories: Array.isArray(candidate.categories) ? candidate.categories : [],
+		links: Array.isArray(candidate.links) ? candidate.links : [],
 	})
 }
 
@@ -731,6 +833,11 @@ function axiosBody(error: unknown): unknown {
 	margin-block-end: 2rem;
 }
 
+.dashboard-links-hint {
+	margin: 0 0 0.75rem;
+	color: var(--color-text-maxcontrast);
+}
+
 .dashboard-links-list {
 	list-style: none;
 	margin: 0 0 0.75rem;
@@ -766,10 +873,44 @@ function axiosBody(error: unknown): unknown {
 	gap: 0.5rem;
 }
 
+.dashboard-links-icon {
+	flex: 1 1 100%;
+}
+
+.dashboard-links-icon-choices {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+}
+
+.dashboard-links-icon-choice {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	padding: 4px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius, 4px);
+	background: var(--color-main-background);
+	cursor: pointer;
+}
+
+.dashboard-links-icon-choice[aria-pressed="true"] {
+	border-color: var(--color-primary-element);
+	outline: 2px solid var(--color-primary-element);
+}
+
+.dashboard-links-icon-choice img,
+.dashboard-links-icon-preview {
+	width: 24px;
+	height: 24px;
+	object-fit: contain;
+}
+
 .dashboard-links-icon-preview {
 	width: 32px;
 	height: 32px;
-	object-fit: contain;
 }
 
 .dashboard-links-lane-select {

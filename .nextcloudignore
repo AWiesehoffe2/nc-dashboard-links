@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 # Store tarball excludes. composer.lock stays in the repository and is not listed here.
+build/
 .audit/
 .github/
 tests/

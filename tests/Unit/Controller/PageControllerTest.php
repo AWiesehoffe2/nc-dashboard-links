@@ -15,6 +15,7 @@ use OCA\DashboardLinks\Links\CatalogStore;
 use OCA\DashboardLinks\Links\LinkPresenter;
 use OCA\DashboardLinks\Links\LinkUrls;
 use OCA\DashboardLinks\Tests\Support\FakeUrlGenerator;
+use OCA\DashboardLinks\Tests\Support\IdentityL10N;
 use OCA\DashboardLinks\Tests\Support\InMemoryAppConfig;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\NotFoundResponse;
@@ -35,12 +36,12 @@ final class PageControllerTest extends TestCase {
 		$store = new CatalogStore(new InMemoryAppConfig());
 		$store->replace(
 			Catalog::parse([
-				'featured' => [$this->laneRow(self::INTRANET_ID, 'Intranet', 'https://intranet.example.com/')],
-				'normal' => [
-					$this->laneRow(self::WIKI_ID, 'Wiki', 'https://wiki.example.com/'),
-					$this->laneRow(self::DISABLED_ID, 'Hidden', 'https://hidden.example.com/', false),
+				'categories' => [],
+				'links' => [
+					$this->row(self::INTRANET_ID, 'Intranet', 'https://intranet.example.com/'),
+					$this->row(self::WIKI_ID, 'Wiki', 'https://wiki.example.com/'),
+					$this->row(self::DISABLED_ID, 'Hidden', 'https://hidden.example.com/', false),
 				],
-				'reference' => [],
 			]),
 			$store->current()->revision(),
 		);
@@ -50,7 +51,20 @@ final class PageControllerTest extends TestCase {
 			$this->createStub(IRequest::class),
 			$store,
 			new LinkPresenter($urls),
+			new IdentityL10N(),
 		);
+	}
+
+	public function testIndexBandsHaveHostSubtitleAndNoLaneLabel(): void {
+		$response = $this->controller->index();
+
+		self::assertInstanceOf(TemplateResponse::class, $response);
+		$bands = $response->getParams()['bands'];
+		self::assertCount(1, $bands);
+		self::assertSame('', $bands[0]['label']);
+		self::assertSame('Intranet', $bands[0]['links'][0]['title']);
+		self::assertSame('intranet.example.com', $bands[0]['links'][0]['subtitle']);
+		self::assertStringNotContainsString('Company', $bands[0]['links'][0]['subtitle']);
 	}
 
 	public function testOpenRedirectLinkIs303ToHttpsHref(): void {
@@ -75,15 +89,16 @@ final class PageControllerTest extends TestCase {
 	}
 
 	/**
-	 * @return array{id: string, title: string, href: string, openMode: string, icon: null, enabled: bool}
+	 * @return array{id: string, title: string, href: string, openMode: string, icon: null, categoryId: null, enabled: bool}
 	 */
-	private function laneRow(string $id, string $title, string $href, bool $enabled = true): array {
+	private function row(string $id, string $title, string $href, bool $enabled = true): array {
 		return [
 			'id' => $id,
 			'title' => $title,
 			'href' => $href,
 			'openMode' => $title === 'Intranet' ? 'iframe' : 'redirect',
 			'icon' => null,
+			'categoryId' => null,
 			'enabled' => $enabled,
 		];
 	}
