@@ -1,31 +1,31 @@
-# SPDX-FileCopyrightText: 2026 Andrew Iesehoff
+# SPDX-FileCopyrightText: 2026 André Wiesehoff
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 version = 1
 SPDX-PackageName = "dashboard_links"
-SPDX-PackageSupplier = "Andrew Iesehoff"
+SPDX-PackageSupplier = "André Wiesehoff"
 SPDX-PackageDownloadLocation = "https://github.com/AWiesehoffe2/nc-dashboard-links"
 
 [[annotations]]
 path = ["composer.json", "composer.lock", "phpunit.xml.dist"]
 precedence = "aggregate"
-SPDX-FileCopyrightText = "2026 Andrew Iesehoff"
+SPDX-FileCopyrightText = "2026 André Wiesehoff"
 SPDX-License-Identifier = "AGPL-3.0-or-later"
 
 [[annotations]]
 path = ["img/app.svg", "img/app-dark.svg", "img/overlay-featured.svg"]
 precedence = "aggregate"
-SPDX-FileCopyrightText = "2026 Andrew Iesehoff"
+SPDX-FileCopyrightText = "2026 André Wiesehoff"
 SPDX-License-Identifier = "AGPL-3.0-or-later"
 
 [[annotations]]
 path = [".audit/**"]
 precedence = "aggregate"
-SPDX-FileCopyrightText = "2026 Andrew Iesehoff"
+SPDX-FileCopyrightText = "2026 André Wiesehoff"
 SPDX-License-Identifier = "AGPL-3.0-or-later"
 
 [[annotations]]
 path = ["package.json", "package-lock.json", "tsconfig.json", "js/**"]
 precedence = "aggregate"
-SPDX-FileCopyrightText = "2026 Andrew Iesehoff"
+SPDX-FileCopyrightText = "2026 André Wiesehoff"
 SPDX-License-Identifier = "AGPL-3.0-or-later"
