@@ -9,6 +9,12 @@ A Dashboard tile of admin-configured company links. App id `dashboard_links`, PH
 
 The tile is an `IAPIWidgetV2` widget. This app ships no dashboard JavaScript; Nextcloud’s own Dashboard renders the items from the widget payload.
 
+## Built entirely with AI
+
+This repository is a **reference**: the app was designed and implemented completely with AI in Cursor. Product direction is André Wiesehoff’s; architecture, code, tests, admin Vue, CI, and documentation were written by the agent against official Nextcloud standards (Dashboard `IAPIWidgetV2`, store `info.xml` XSD, coding standard, REUSE).
+
+Use it to see what a first Marketplace-oriented Nextcloud app can look like when the whole tree is AI-built, not as a claim that no human review is needed.
+
 ## Enable the app
 
 From the server:

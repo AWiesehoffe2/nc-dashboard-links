@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - Unreleased
 
-First version of Company Links Dashboard (`dashboard_links`).
+First version of Company Links Dashboard (`dashboard_links`). This repository is a public reference for an app designed and implemented entirely with AI.
 
 ### Added
 
