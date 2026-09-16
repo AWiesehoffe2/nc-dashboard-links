@@ -51,4 +51,17 @@ final class IconsTest extends TestCase {
 			self::assertSame('icon', $e->field);
 		}
 	}
+
+	public function testIconParseAcceptsAllowlistedCoreIconAndRejectsUnknown(): void {
+		$icon = Icon::parse('core:places/link.svg');
+		self::assertTrue($icon->isCore());
+		self::assertSame('places/link.svg', $icon->corePath());
+
+		try {
+			Icon::parse('core:actions/delete.svg');
+			self::fail('Icon::parse accepted an unknown core icon');
+		} catch (InvalidLink $e) {
+			self::assertSame('icon', $e->field);
+		}
+	}
 }

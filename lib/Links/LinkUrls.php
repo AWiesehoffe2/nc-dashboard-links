@@ -29,6 +29,11 @@ final class LinkUrls {
 		if ($link->icon === null) {
 			return $this->defaultIconUrl();
 		}
+		if ($link->icon->isCore()) {
+			return $this->urlGenerator->getAbsoluteURL(
+				$this->urlGenerator->imagePath('core', $link->icon->corePath()),
+			);
+		}
 
 		return $this->storedIconUrl($link->icon);
 	}
@@ -38,15 +43,6 @@ final class LinkUrls {
 			Application::APP_ID . '.icon.show',
 			['file' => (string)$icon],
 		);
-	}
-
-	public function overlayIconUrl(CompanyLink $link): string {
-		return match ($link->importance) {
-			Importance::Featured => $this->urlGenerator->getAbsoluteURL(
-				$this->urlGenerator->imagePath(Application::APP_ID, 'overlay-featured.svg'),
-			),
-			Importance::Normal, Importance::Reference => '',
-		};
 	}
 
 	public function defaultIconUrl(): string {

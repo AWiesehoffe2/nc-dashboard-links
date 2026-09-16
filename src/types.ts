@@ -3,7 +3,10 @@
 
 export type OpenMode = 'iframe' | 'redirect'
 
-export type LaneKey = 'featured' | 'normal' | 'reference'
+export interface Category {
+	id: string
+	title: string
+}
 
 export interface Row {
 	id: string
@@ -11,14 +14,20 @@ export interface Row {
 	href: string
 	openMode: OpenMode
 	icon: string | null
+	categoryId: string | null
 	enabled: boolean
 }
 
 export interface CatalogEnvelope {
 	revision: string
-	featured: Row[]
-	normal: Row[]
-	reference: Row[]
+	categories: Category[]
+	links: Row[]
+}
+
+export interface CoreIconChoice {
+	id: string
+	url: string
+	label: string
 }
 
 export interface FieldError {
@@ -26,5 +35,3 @@ export interface FieldError {
 	field: string
 	message: string
 }
-
-export const LANES: readonly LaneKey[] = ['featured', 'normal', 'reference']

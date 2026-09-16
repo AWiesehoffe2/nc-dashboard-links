@@ -43,25 +43,18 @@ occ config:app:set dashboard layout --value "recommendations,spreed,mail,calenda
 
 This app never rewrites user layouts.
 
-## Configure three lanes
+## Configure the catalog
 
-Open **Administration settings → Company links**. The catalog is three lanes. The lane is the importance; rows do not carry an `importance` key.
-
-| Lane | Wire key | Meaning | Where it shows |
-| --- | --- | --- | --- |
-| Featured | `featured` | The handful everybody needs | Top of the tile |
-| Company | `normal` | Everyday company links | After featured, until the seven tile slots are used |
-| Reference | `reference` | Rarely needed, kept for completeness | Usually only on **All links** |
-
-Order within a lane is the order of the rows. Save replaces the whole catalog (at most 200 links). If another administrator saved in the meantime, the API returns the current catalog; re-apply your edits and save again.
+Open **Administration settings → Company links**. Links live in one list. Leave them uncategorized unless you need a named group. Save replaces the whole catalog (at most 200 links and 40 categories). If another administrator saved in the meantime, the API returns the current catalog. Re-apply your edits and save again. A successful save shows a confirmation on the page.
 
 Each row has:
 
-- **Title**: 1–120 characters.
-- **URL**: `https` only. `http`, `mailto`, and URLs with embedded credentials are rejected.
-- **Open mode**: iframe or redirect (see below).
-- **Icon**: optional, stored in this app and served from your Nextcloud origin.
-- **Enabled**: off hides the link without deleting it.
+- **Title**. 1–120 characters.
+- **URL**. `https` only. `http`, `mailto`, and URLs with embedded credentials are rejected.
+- **Open mode**. iframe or redirect (see below).
+- **Icon**. A Nextcloud core icon or an upload stored in this app and served from your Nextcloud origin.
+- **Category**. Optional. Missing or empty means the default list.
+- **Enabled**. Off hides the link without deleting it.
 
 ## iframe vs redirect
 
@@ -71,6 +64,14 @@ Both modes open through `/open/{id}` so a bookmark keeps working after a mode ch
 - **redirect** — `/open/{id}` responds with 303 to the https URL.
 
 The Dashboard tile itself never embeds a site. Remote sites may still refuse framing (`X-Frame-Options`, `frame-ancestors`); use redirect when in doubt.
+
+## Privacy
+
+This app does not store user accounts and does not send data to the author. The catalog holds titles, https URLs, open mode, and optional icons that the administrator entered.
+
+Opening a link (iframe or redirect) sends the user's browser to that https address. The destination can see the user's IP address, browser details, and often the Nextcloud address as referrer. Open responses send `Referrer-Policy: no-referrer` so the Nextcloud URL is less likely to leak. The destination still sees the request itself. Administrators must list those destinations in the instance privacy notice.
+
+Uninstall deletes the catalog and uploaded icons.
 
 ## Uninstall
 
@@ -82,42 +83,42 @@ Uninstall removes this app’s catalog and uploaded icons. It does not touch oth
 
 ## Admin API
 
-The catalog lives in one lazy `IAppConfig` key, `catalog`. Administrators read and replace it over OCS (admin session; CSRF token on writes).
+The catalog lives in one lazy `IAppConfig` key, `catalog`. Administrators read and replace it over OCS (admin session). GET and PUT both require a CSRF token in the browser. Non-browser OCS clients can pass `OCS-APIREQUEST: true` or a Bearer token instead. PUT and icon POST also require a recent password confirmation.
 
 ```
 GET /ocs/v2.php/apps/dashboard_links/api/v1/catalog
 PUT /ocs/v2.php/apps/dashboard_links/api/v1/catalog
 ```
 
-The body is a three-lane envelope, not a flat `links` list:
+The body is `{revision, categories, links}`:
 
 ```json
 {
   "revision": "3f9a0c1b2d4e",
-  "featured": [
+  "categories": [],
+  "links": [
     {
       "id": "6d4f0c4e-6a8c-4a0b-9d3a-2f0a1c3b5e7d",
       "title": "Intranet",
       "href": "https://intranet.example.com/",
       "openMode": "iframe",
-      "icon": "9f3c2a1b0e4d5c6f.png",
+      "icon": "core:places/link.svg",
+      "categoryId": null,
       "enabled": true
     }
-  ],
-  "normal": [],
-  "reference": []
+  ]
 }
 ```
 
-A row on the wire is `{id, title, href, openMode, icon, enabled}`. Do not send `importance`; the lane supplies it. Ids are lowercase UUIDv4 minted by the client. Keep the id when editing a row; mint a new one when adding.
+A category is `{id, title}`. A link is `{id, title, href, openMode, icon, categoryId, enabled}`. `categoryId` is null for the default list. `icon` is null, a stored file name, or a `core:` Nextcloud icon. Do not send `importance` or the old `featured` / `normal` / `reference` keys. Ids are lowercase UUIDv4 minted by the client. Keep the id when editing a row. Mint a new one when adding.
 
 - `200` — saved catalog (same envelope). Saving the catalog that is already stored succeeds and writes nothing, even if `revision` is stale.
-- `400` — `{ "errors": [ { "index": 2, "field": "href", "message": "…" } ] }`; every field error is collected.
-- `412` — someone else saved first; the body is the current catalog in the same lane envelope.
+- `400` — `{ "errors": [ { "index": 2, "field": "href", "message": "…" } ] }`. Every field error is collected.
+- `412` — someone else saved first. The body is the current catalog.
 
-`revision` is the first 12 hex characters of SHA-256 over the canonical link list. It is not stored as its own config key.
+`revision` is the first 12 hex characters of SHA-256 over the canonical categories and links. It is not stored as its own config key. A schema 1 catalog (flat `links` with `importance`) is read as the default list. The next save writes schema 2.
 
-Optional import from the official External sites app is browser-only. When `externalSitesAvailable` is true, the settings page can GET External sites and append Company rows. Nothing is stored until Save. This app never reads or writes External sites’ configuration on the server.
+Optional import from the official External sites app is browser-only. When `externalSitesAvailable` is true, the settings page can GET External sites and append rows to the default list. Nothing is stored until Save. This app never reads or writes External sites’ configuration on the server.
 
 ## For developers
 
@@ -131,3 +132,7 @@ npm run build
 ```
 
 `composer cs:fix` applies the Nextcloud coding standard. There is no dashboard JavaScript; `npm run build` emits the admin settings bundle.
+
+## App store
+
+See [docs/publish.md](docs/publish.md) for the tarball, certificate request, and release signatures. `make appstore` writes `build/appstore/dashboard_links.tar.gz`. The store certificate is not in this repository.

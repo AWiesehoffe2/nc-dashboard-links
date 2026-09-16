@@ -14,7 +14,8 @@ use OCP\IAppConfig;
 
 final class CatalogStore {
 	private const KEY = 'catalog';
-	private const SCHEMA = 1;
+	private const SCHEMA = 2;
+	private const LEGACY_SCHEMA = 1;
 
 	public function __construct(
 		private readonly IAppConfig $config,
@@ -26,30 +27,19 @@ final class CatalogStore {
 		if ($doc === []) {
 			return Catalog::empty();
 		}
-		if (($doc['schema'] ?? null) !== self::SCHEMA) {
-			return Catalog::empty();
+		$schema = $doc['schema'] ?? null;
+		if ($schema === self::LEGACY_SCHEMA) {
+			$rows = $doc['links'] ?? [];
+			return Catalog::fromLegacyRows(is_array($rows) ? array_values($rows) : []);
 		}
-		$rows = $doc['links'] ?? [];
-		if (!is_array($rows)) {
+		if ($schema !== self::SCHEMA) {
 			return Catalog::empty();
-		}
-		$kept = [];
-		$seen = [];
-		foreach ($rows as $row) {
-			try {
-				$link = CompanyLink::parse($row);
-			} catch (InvalidLink) {
-				continue;
-			}
-			$id = (string)$link->id;
-			if (isset($seen[$id])) {
-				continue;
-			}
-			$seen[$id] = true;
-			$kept[] = $link;
 		}
 		try {
-			return Catalog::of(...$kept);
+			return Catalog::parse([
+				'categories' => $doc['categories'] ?? [],
+				'links' => $doc['links'] ?? [],
+			]);
 		} catch (InvalidCatalog) {
 			return Catalog::empty();
 		}
@@ -63,11 +53,17 @@ final class CatalogStore {
 	 */
 	public function replace(Catalog $next, string $expectedRevision): Catalog {
 		$current = $this->current();
-		if ($next->revision() === $current->revision()) {
+		$stored = $this->config->getValueArray(Application::APP_ID, self::KEY, [], true);
+		$needsUpgrade = ($stored['schema'] ?? null) !== self::SCHEMA;
+		if ($next->revision() === $current->revision() && !$needsUpgrade) {
 			return $current;
 		}
 		if ($expectedRevision !== $current->revision()) {
 			throw new StaleCatalog($current);
+		}
+		$categories = [];
+		foreach ($next->categories() as $category) {
+			$categories[] = $category->jsonSerialize();
 		}
 		$links = [];
 		foreach ($next->links() as $link) {
@@ -76,7 +72,7 @@ final class CatalogStore {
 		$this->config->setValueArray(
 			Application::APP_ID,
 			self::KEY,
-			['schema' => self::SCHEMA, 'links' => $links],
+			['schema' => self::SCHEMA, 'categories' => $categories, 'links' => $links],
 			true,
 		);
 

@@ -8,5 +8,11 @@ declare(strict_types=1);
  */
 
 /** @var array{href: string} $_ */
+if (function_exists('style')) {
+	style('dashboard_links', 'frame');
+}
 ?>
-<iframe src="<?php echo htmlspecialchars($_['href'], ENT_QUOTES, 'UTF-8'); ?>" style="width:100%;height:100vh;border:0;"></iframe>
+<iframe
+	class="dashboard-links-frame"
+	src="<?php echo htmlspecialchars($_['href'], ENT_QUOTES, 'UTF-8'); ?>"
+	title=""></iframe>

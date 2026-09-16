@@ -1,0 +1,11 @@
+/**
+ * SPDX-FileCopyrightText: 2026 André Wiesehoff
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+.dashboard-links-frame {
+	display: block;
+	width: 100%;
+	height: calc(100vh - var(--header-height, 50px));
+	border: 0;
+}
